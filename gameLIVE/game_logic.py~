@@ -1,0 +1,110 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Mar 26 20:59:43 2013
+
+@author: olgis
+
+
+    Any live cell with fewer than two live neighbours dies, 
+                as if caused by under-population.
+    Any live cell with two or three live neighbours
+                lives on to the next generation.
+    Any live cell with more than three live neighbours dies,
+                as if by overcrowding.
+    Any dead cell with exactly three live neighbours becomes a live cell,
+               as if by reproduction.
+"""
+import numpy.random as nprnd
+
+def seed(seed_num, total):
+    """Generate an inital position of squares, based on seed number.
+        fun(int, int) --> list"""
+    play_ground = [0]*(total) #generate a playground populated by 0
+    rand_list = nprnd.randint(0, total, seed_num) #list of rnd values
+    for rnd_num in rand_list:
+        play_ground[rnd_num] = 1 #assigning rnd values to 1
+    
+    return play_ground
+
+def get_neighbours(w_num, h_num, total):
+    """Generate dict of neighbours' indexes for every square.
+        fun(int,int,int) --> dict{int sq: [neighbout index]}"""
+    neigh_dict = {}
+    left_edge = range(0, total, w_num)
+    right_edge = range(w_num-1, total, w_num)
+    
+    for row in range(1, w_num+1):
+        for col in range(h_num):
+            now = (row - 1)*w_num + col #calculate index of the square
+
+            #calculate all 9 possible neightbours
+            all_neigh = [now-1-w_num, now-w_num, now+1-w_num,
+                             now -1, now +1, 
+                             now -1+w_num, now+w_num, now+1+w_num] 
+            if now < w_num:
+                #remove all values bellow 0
+                all_neigh = [i for i in all_neigh if i > 0]
+            if now in left_edge:
+                #remove false right edge neighbours
+                all_neigh = [j for j in all_neigh if j not in right_edge]
+            if now in right_edge:
+                #remove false left edge neighbours
+                all_neigh = [k for k in all_neigh if k not in left_edge]
+            if now > (w_num*(h_num-1)-2):
+                #remove valuse greater then total
+                all_neigh = [f for f in all_neigh if f < total]                
+            
+            neigh_dict[now] = all_neigh
+
+    return neigh_dict
+    
+    
+    
+def values_update(playground, neighbours_dict):
+    """Update playground acording to rules of the game
+       fun(list, list) --> list new_playground, list old_playground"""
+    new_playground = playground[:]
+    
+    for item in [[i, x] for i, x in enumerate(playground)]:
+        sq_val = item[1]
+        sq_ind = item[0]
+
+        
+        n_val = [playground[n_index] for n_index in neighbours_dict[sq_ind]]
+        
+        new_playground[sq_ind] = rules_of_game(sq_val, n_val)
+        
+    return new_playground
+    
+    
+      
+def rules_of_game(sq_value, neigh_value):
+    """Change value of square acording to it neighbours
+       fun(int, list) --> int """
+    
+    #under-population
+    if sq_value == 1 and neigh_value.count(1) < 2:
+        sq_value = 0
+
+    # by overcrowding
+    if sq_value == 1 and neigh_value.count(1) > 3:
+        sq_value = 0
+        
+    #by reproduction
+    if sq_value == 0 and neigh_value.count(1) == 3:
+        sq_value = 1
+    
+    return sq_value
+    
+def game_over(current_ground, previous_ground, running):
+    """Finish the game by setting running to 0, acording to 3 cases
+       fun(list, list, boolean) --> boolean"""
+    if 1 not in current_ground:
+        print "Game over, because all 0"
+        running = False
+    elif previous_ground == current_ground:
+        print "Game over, because new is old"
+        running = False
+    
+        
+    return running      
